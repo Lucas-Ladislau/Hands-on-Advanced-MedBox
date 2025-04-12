@@ -1,7 +1,7 @@
 import 'package:medboxapp/main.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'medicina_model.dart';
+import 'remedio_model.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -42,6 +42,11 @@ class DatabaseHelper {
   );
 }
 
+  Future<int> inserirRemedio(Remedio remedio) async {
+    final db = await database;
+    return await db.insert('remedios', remedio.toMap());
+  }
+  
   // ✅ Listar todos os remédios
   Future<List<Remedio>> listarRemedios() async {
     final db = await database;

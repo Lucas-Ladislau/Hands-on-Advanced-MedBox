@@ -5,13 +5,17 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 import 'database_helper.dart';
+import 'remedio_model.dart';
+import 'huffman.dart';
+import 'dart:async';
+// import 'package:flutter/material.dart';
 
 
 // 🔹 Configuração MQTT
-const String mqttServer = "a75c63a4fa874ed09517714e6df8d815.s1.eu.hivemq.cloud";
+const String mqttServer = "6b855318cbf249028a44d6a8610f73e9.s1.eu.hivemq.cloud";
 const int mqttPort = 8883;
-const String mqttUser = "hivemq.webclient.1740513563954";
-const String mqttPassword = "Ix730QlcM2.<CrH&T,vb";
+const String mqttUser = "hivemq.webclient.1744490960100";
+const String mqttPassword = "2fk,1c30<%TPREj&AZdy";
 const String mqttTopicUmidade = "Umidade";  
 const String mqttTopicRemedio = "Remedios";  
 
@@ -46,57 +50,6 @@ class Remedio {
   }
 }
 
-class DatabaseHelper {
-  static Database? _database;
-  static final DatabaseHelper instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => instance;
-
-  DatabaseHelper._internal();
-
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
-  }
-
-  Future<Database> _initDatabase() async {
-  final databasesPath = await getDatabasesPath();
-  final path = p.join(databasesPath, 'remedios.db');
-
-  return await openDatabase(
-    path,
-    version: 1,
-    onCreate: (db, version) async {
-      await db.execute('''
-        CREATE TABLE remedios (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          nome TEXT NOT NULL,
-          horario TEXT NOT NULL,
-          numero_compartimento INTEGER NOT NULL
-        )
-      ''');
-    },
-  );
-}
-
-
-  Future<int> inserirRemedio(Remedio remedio) async {
-    final db = await database;
-    return await db.insert('remedios', remedio.toMap());
-  }
-
-  Future<List<Remedio>> listarRemedios() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('remedios');
-    return List.generate(maps.length, (i) => Remedio.fromMap(maps[i]));
-  }
-
-  Future<void> deletarRemedio(int id) async {
-    final db = await database;
-    await db.delete('remedios', where: 'id = ?', whereArgs: [id]);
-  }
-}
-
 class RemedioScreen extends StatefulWidget {
   @override
   _RemedioScreenState createState() => _RemedioScreenState();
@@ -115,23 +68,44 @@ class _RemedioScreenState extends State<RemedioScreen> {
     return Scaffold(
       appBar: AppBar(title: Text("Medbox")),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(padding: EdgeInsets.all(16), child: Text("📡 Última Notificação:\n$mensagemRecebida")),
-          Spacer(),
-          Center(
-            child: Column(
-              children: [
-                ElevatedButton(
-                  onPressed: () => _adicionarRemedio(context), // ✅ Agora passando o BuildContext corretamente
-                  child: Text("➕ Adicionar Remédio"),
-                ),
-              ],
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Padding(
+      padding: EdgeInsets.all(16),
+      child: Text("📡 Última Notificação:\n$mensagemRecebida"),
+    ),
+    Expanded(
+      child: ListView.builder(
+        itemCount: _remedios.length,
+        itemBuilder: (context, index) {
+          final remedio = _remedios[index];
+          return Card(
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListTile(
+              leading: Icon(Icons.medication),
+              title: Text(remedio.nome),
+              subtitle: Text("⏰ ${remedio.horario} • Compartimento: ${remedio.numeroCompartimento}"),
+              trailing: IconButton(
+                icon: Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deletarRemedio(remedio.id!),
+              ),
             ),
-          ),
-          Spacer(),
-        ],
+          );
+        },
       ),
+    ),
+    Center(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: ElevatedButton(
+          onPressed: () => _adicionarRemedio(context),
+          child: Text("➕ Adicionar Remédio"),
+        ),
+      ),
+    ),
+  ],
+),
+
     );
   }
 
@@ -142,7 +116,31 @@ class _RemedioScreenState extends State<RemedioScreen> {
     conectarMQTT();
     resetDatabase();
     _dbHelper = DatabaseHelper();
-    //_carregarRemedios();
+
+    _carregarRemedios();
+    
+    // Roda a verificação a cada 30 segundos
+    Timer.periodic(Duration(seconds: 15), (timer) {
+      verificarHorarios();
+    });
+  }
+
+  void verificarHorarios() async {
+    final now = TimeOfDay.now();
+    var horaAtual = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+    print("Hora atual: $horaAtual");  
+
+
+    final remedios = await _dbHelper.listarRemedios();
+    print("ENTROUUUU");
+    for (var remedio in remedios) {
+      if (remedio.horario == horaAtual) {
+        // Evita envio repetido: só envia 1x por minuto
+        print("hora do remedio !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        // enviarMensagem(remedio.nome, remedio.horario, remedio.numeroCompartimento);
+        // exibirNotificacao("💊 Hora do Remédio!", "${remedio.nome} no compartimento ${remedio.numeroCompartimento}");
+      }
+    }
   }
 
   void configurarNotificacoes() async {
@@ -199,6 +197,7 @@ class _RemedioScreenState extends State<RemedioScreen> {
 
           if (event[0].topic == mqttTopicUmidade && payload.contains("alta")) {
             exibirNotificacao("🚨 Alerta!", "Umidade elevada na caixa!");
+            print("Umidade detectada");
           }
           if (event[0].topic == mqttTopicRemedio && payload.contains("apagado")) {
             exibirNotificacao("✅ Confirmação", "Remédio tomado!");
@@ -289,7 +288,7 @@ class _RemedioScreenState extends State<RemedioScreen> {
 
   void resetDatabase() async {
     final databasesPath = await getDatabasesPath();
-    final path = p.join(databasesPath, 'medicina.db'); // Ou 'remedios.db' se tiver alterado
+    final path = p.join(databasesPath, 'remedios.db'); // Ou 'remedios.db' se tiver alterado
 
     await deleteDatabase(path);
   }
