@@ -4,15 +4,15 @@
 #include <DHT.h>
 
 // Configurações de rede Wi-Fi
-const char* ssid = "Starlink_CIT";
-const char* password = "Ufrr@2024Cit";
+const char* ssid = "SSID";
+const char* password = "Senha";
 
 // Configurações do HiveMQ Broker
-const char* mqtt_server = "a75c63a4fa874ed09517714e6df8d815.s1.eu.hivemq.cloud";
+const char* mqtt_server = "mqtt_servel_url";
 const char* mqtt_topic1 = "Umidade";
 const char* mqtt_topic2 = "Remedios";
-const char* mqtt_username = "hivemq.webclient.1740513563954";
-const char* mqtt_password = "Ix730QlcM2.<CrH&T,vb";
+const char* mqtt_username = "mqtt_username";
+const char* mqtt_password = "password";
 const int mqtt_port = 8883;
 
 WiFiClientSecure espClient;
