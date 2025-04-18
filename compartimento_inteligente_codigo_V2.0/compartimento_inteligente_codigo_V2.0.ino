@@ -5,14 +5,14 @@
 
 // Configurações de rede Wi-Fi
 const char* ssid = "SSID";
-const char* password = "Senha";
+const char* password = "password";
 
 // Configurações do HiveMQ Broker
-const char* mqtt_server = "mqtt_servel_url";
+const char* mqtt_server = "Server";
 const char* mqtt_topic1 = "Umidade";
 const char* mqtt_topic2 = "Remedios";
-const char* mqtt_username = "mqtt_username";
-const char* mqtt_password = "password";
+const char* mqtt_username = "username";
+const char* mqtt_password = "passsword";
 const int mqtt_port = 8883;
 
 WiFiClientSecure espClient;
@@ -20,11 +20,19 @@ PubSubClient client(espClient);
 
 // Definição dos pinos
 #define led_remedio1 32
-#define led_remedio2 22
-#define buzzer 21
-#define trigPin 18        // Pino de Trigger do HC-SR04
-#define echoPin 19        // Pino de Echo do HC-SR04
-#define dhtPin 33         // Pino de dados do DHT11
+#define led_remedio2 26
+#define led_remedio3 27
+#define led_remedio4 19
+#define led_remedio5 13
+#define led_remedio6 14
+#define led_remedio7 15
+#define led_remedio8 12
+#define led_remedio9 17
+#define led_remedio10 18
+#define buzzer 25
+#define trigPin 22        // Pino de Trigger do HC-SR04
+#define echoPin 23        // Pino de Echo do HC-SR04
+#define dhtPin 21         // Pino de dados do DHT11
 
 DHT dht(dhtPin, DHT11);
 
@@ -38,11 +46,29 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println(message);
 
   // Aciona os LEDs e o buzzer com base no tópico recebido
-  if (message == "Remedio registrado: Remedio 1\") {
+  if (message == "Remedio 1") {
     acionaLedEBuzzer(led_remedio1, "Remédio 1");
-  } else if (message == "Remedio registrado: Remedio 2") {
+  } else if (message == "Remedio 2") {
     acionaLedEBuzzer(led_remedio2, "Remédio 2");
+  } else if (message == "Remedio 3") {
+    acionaLedEBuzzer(led_remedio3, "Remédio 3");
+  } else if (message == "Remedio 4") {
+    acionaLedEBuzzer(led_remedio4, "Remédio 4");
+  } else if (message == "Remedio 5") {
+    acionaLedEBuzzer(led_remedio5, "Remédio 5");
+  } else if (message == "Remedio 6") {
+    acionaLedEBuzzer(led_remedio6, "Remédio 6");
+  } else if (message == "Remedio 7") {
+    acionaLedEBuzzer(led_remedio7, "Remédio 7");
+  } else if (message == "Remedio 8") {
+    acionaLedEBuzzer(led_remedio8, "Remédio 8");
+  } else if (message == "Remedio 9") {
+    acionaLedEBuzzer(led_remedio9, "Remédio 9");
+  } else if (message == "Remedio 10") {
+    acionaLedEBuzzer(led_remedio10, "Remédio 10");
   }
+
+  
 } 
 
 // Função para conectar ao Wi-Fi
@@ -63,7 +89,8 @@ void reconnect() {
     Serial.print("Tentando se reconectar ao MQTT...");
     if (client.connect("ESP32Client", mqtt_username, mqtt_password)) {
       Serial.println("Conectado.");
-      client.subscribe(mqtt_topic1);  // Inscreve-se no tópico
+      client.subscribe(mqtt_topic1); 
+      client.subscribe(mqtt_topic2);  
     } else {
       Serial.print("Falha, rc=");
       Serial.print(client.state());
@@ -77,7 +104,7 @@ void reconnect() {
 void acionaLedEBuzzer(int ledPin, const char* nomeRemedio) {
   Serial.println("Entrou");
   digitalWrite(ledPin, HIGH);  // Liga o LED
-  tone(buzzer, 5000);          // Aciona o buzzer (5000Hz)
+  // tone(buzzer, 5000);          // Aciona o buzzer (5000Hz)
   Serial.println(nomeRemedio);
 
   // Aguarda a pessoa se aproximar (distância ≤ 5 cm) para desligar LED e buzzer
@@ -86,7 +113,7 @@ void acionaLedEBuzzer(int ledPin, const char* nomeRemedio) {
   }
 
   digitalWrite(ledPin, LOW);
-  noTone(buzzer);
+  // noTone(buzzer);
   Serial.println("Distância atingida, desligando LED e buzzer.");
 }
 
@@ -139,6 +166,15 @@ void setup() {
 
   pinMode(led_remedio1, OUTPUT);
   pinMode(led_remedio2, OUTPUT);
+  pinMode(led_remedio3, OUTPUT);
+  pinMode(led_remedio4, OUTPUT);
+  pinMode(led_remedio5, OUTPUT);
+  pinMode(led_remedio6, OUTPUT);
+  pinMode(led_remedio7, OUTPUT);
+  pinMode(led_remedio8, OUTPUT);
+  pinMode(led_remedio9, OUTPUT);
+  pinMode(led_remedio10, OUTPUT);
+
   pinMode(buzzer, OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
