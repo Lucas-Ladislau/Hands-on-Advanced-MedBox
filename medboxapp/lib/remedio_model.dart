@@ -1,12 +1,12 @@
 import 'package:medboxapp/main.dart';
 
-class remedio {
+class Remedio {
   int? id;
   String nome;
   String horario;
   int numeroCompartimento;
 
-  remedio({this.id, required this.nome, required this.horario, required this.numeroCompartimento});
+  Remedio({this.id, required this.nome, required this.horario, required this.numeroCompartimento});
 
   // Converter um objeto Medicina para um Map (SQLite)
   Map<String, dynamic> toMap() {
@@ -18,8 +18,8 @@ class remedio {
     };
   }
 
-  factory remedio.fromMap(Map<String, dynamic> map) {
-    return remedio(
+  factory Remedio.fromMap(Map<String, dynamic> map) {
+    return Remedio(
       id: map['id'],
       nome: map['nome'],
       horario: map['horario'],
