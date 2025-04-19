@@ -1,0 +1,1 @@
+/home/lucas_anderson/Documentos/Curso-CC/Hands-on-Advanced-MedBox/medboxapp/build/app/intermediates/cxx/Debug/184v1y55/obj/x86
