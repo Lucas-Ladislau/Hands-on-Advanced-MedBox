@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:medboxapp/huffman.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
+import 'dart:convert';
 
 import 'database_helper.dart';
 import 'remedio_model.dart';
@@ -40,7 +42,7 @@ class MyApp extends StatelessWidget {
           selectedIconTheme: IconThemeData(size: 28),
         ),
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: const Color.fromARGB(255, 47, 163, 47),
           foregroundColor: Colors.white,
         ),
       ),
@@ -119,49 +121,83 @@ class _RemedioScreenState extends State<RemedioScreen> {
     _dbHelper = DatabaseHelper();
     // resetDatabase();
     _carregarRemedios();
-
-    Timer.periodic(Duration(seconds: 15), (timer) {
+    
+    Timer.periodic(Duration(seconds: 45), (timer) {
       verificarHorarios();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Card(
-            color: Colors.white,
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                "📡 Última Notificação:\n$mensagemRecebida",
-                style: TextStyle(fontSize: 16),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Saudação e ícone
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.deepPurple,
+                  child: Icon(Icons.person, color: Colors.white, size: 30),
+                ),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Bem-vindo(a)!", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                    Text("Sua Rotina de Remédios", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            // Última Notificação
+            Card(
+              color: Colors.amber[50],
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: Icon(Icons.notifications_active, color: Colors.amber),
+                title: Text("Última Notificação", style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(mensagemRecebida, style: TextStyle(fontSize: 16)),
               ),
             ),
-          ),
-          SizedBox(height: 20),
-          Expanded(
-            child: _remedios.isEmpty
-                ? Center(
-                    child: Text("Nenhum remédio cadastrado.", style: TextStyle(fontSize: 16)),
+            SizedBox(height: 16),
+            // Lista de Remédios
+            Text(
+              "Seus Remédios",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            _remedios.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(child: Text("Nenhum remédio cadastrado.", style: TextStyle(fontSize: 16))),
                   )
-                : ListView.builder(
+                : ListView.separated(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
                     itemCount: _remedios.length,
+                    separatorBuilder: (_, __) => SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final remedio = _remedios[index];
                       return Card(
                         color: Colors.white,
                         elevation: 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         child: ListTile(
-                          leading: Icon(Icons.medication, color: Colors.deepPurple),
-                          title: Text(remedio.nome),
-                          subtitle: Text("⏰ ${remedio.horario} • Compartimento: ${remedio.numeroCompartimento}"),
+                          leading: Icon(Icons.medication, color: Colors.deepPurple, size: 32),
+                          title: Text(remedio.nome, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("⏰ ${remedio.horario}", style: TextStyle(fontSize: 15)),
+                              Text("Compartimento: ${remedio.numeroCompartimento}", style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
                           trailing: IconButton(
                             icon: Icon(Icons.delete, color: Colors.red),
                             onPressed: () => _deletarRemedio(remedio.id!),
@@ -170,26 +206,27 @@ class _RemedioScreenState extends State<RemedioScreen> {
                       );
                     },
                   ),
-          ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+            SizedBox(height: 28),
+            // Botão Adicionar Remédio
+            Center(
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                   shape: StadiumBorder(),
                   backgroundColor: Colors.deepPurple,
+                  elevation: 4,
                 ),
                 onPressed: () => _adicionarRemedio(context),
-                icon: Icon(Icons.add, color: Colors.white),
+                icon: Icon(Icons.add, color: Colors.white, size: 26),
                 label: Text(
                   "Adicionar Remédio",
-                  style: TextStyle(color: Colors.amber), // 👈 Cor personalizada aqui
+                  style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-          ),
-        ],
+            SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
@@ -228,7 +265,7 @@ class _RemedioScreenState extends State<RemedioScreen> {
           setState(() {
             mensagemRecebida = payload;
           });
-
+          
           if (event[0].topic == mqttTopicUmidade && payload.contains("alta")) {
             exibirNotificacao("🚨 Alerta!", "Umidade elevada na caixa!");
           }
@@ -272,9 +309,35 @@ class _RemedioScreenState extends State<RemedioScreen> {
 
   void enviarMensagem(String nome, String horario, int compartimento) {
     final builder = MqttClientPayloadBuilder();
-    builder.addString("$compartimento|$horario|$nome"); // Mensagem no formato "compartimento|horário|nome"
+    // final mensagemOriginal = "$compartimento|$horario|$nome";
+    final mensagemOriginal = "Remedio $compartimento";
 
+    // Gera compressão
+    final huffman = HuffmanCoding();
+    final mensagemComprimida = huffman.compress(mensagemOriginal);
+
+    // Serializa o mapa de códigos como string JSON-like
+    final codigos = jsonEncode(huffman.codes);
+
+    // Cria payload no formato: códigos ||| mensagem_comprimida
+    final payload = "$codigos|||$mensagemComprimida";
+    builder.addString(payload);
+
+    // Publica no MQTT
     client.publishMessage(mqttTopicRemedio, MqttQos.atLeastOnce, builder.payload!);
+
+    // Medir os tamanhos
+    // final tamanhoOriginalChars = mensagemOriginal.length;
+    // final tamanhoOriginalBytes = utf8.encode(mensagemOriginal).length;
+    // final tamanhoComprimidoBits = mensagemComprimida.length;
+    // final tamanhoComprimidoBytes = (tamanhoComprimidoBits / 8).ceil(); 
+
+    // Mostrar resultados
+    // print("Mensagem original: $mensagemOriginal");
+    // print("Tamanho original: $tamanhoOriginalChars caracteres / $tamanhoOriginalBytes bytes");
+    // print("Mensagem comprimida (bits): $mensagemComprimida");
+    // print("Tamanho comprimido: $tamanhoComprimidoBits bits ≈ $tamanhoComprimidoBytes bytes");
+    // print("Tabela de códigos: ${huffman.codes}");
   }
 
   void _carregarRemedios() async {
