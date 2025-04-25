@@ -4,33 +4,74 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Desempenho', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
       backgroundColor: Color(0xFFF4F6FA),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Olá, tudo bem? 👋",
-                style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Saudação e título
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.deepPurple,
+                  child: Icon(Icons.emoji_events, color: Colors.white, size: 30),
+                ),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Olá, tudo bem? 👋",
+                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                    ),
+                    Text(
+                      "Seu Progresso Semanal",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            // Card de progresso de remédios
+            _buildProgressCard(context, "Remédios tomados", 6, 7, Icons.check_circle, Colors.green),
+            SizedBox(height: 16),
+            // Calendário de hábitos
+            Text(
+              "Calendário de hábitos",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            _buildHabitCalendar(),
+            SizedBox(height: 24),
+            // Card motivacional ou espaço extra para futuras metas
+            Card(
+              color: Colors.deepPurple[50],
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Icon(Icons.celebration, color: Colors.deepPurple, size: 32),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        "Continue assim! Cada dia cuidando da sua saúde conta. 🎉",
+                        style: TextStyle(fontSize: 16, color: Colors.deepPurple[900], fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: 8),
-              Text(
-                "Seu progresso semanal",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 24),
-              _buildProgressCard(context, "Remédios tomados", 6, 7, Icons.check_circle, Colors.green),
-              SizedBox(height: 16),
-              Text(
-                "Calendário de hábitos",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),  
-              SizedBox(height: 12),
-              _buildHabitCalendar(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -39,6 +80,7 @@ class DashboardPage extends StatelessWidget {
   Widget _buildProgressCard(BuildContext context, String title, int current, int total, IconData icon, Color color) {
     double percent = current / total;
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: Padding(
@@ -73,6 +115,7 @@ class DashboardPage extends StatelessWidget {
     List<bool> status = [true, true, true, false, true, false, false];
 
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: Padding(
