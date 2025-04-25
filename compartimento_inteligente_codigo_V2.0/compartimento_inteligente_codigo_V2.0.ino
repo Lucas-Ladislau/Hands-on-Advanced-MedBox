@@ -2,18 +2,23 @@
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 #include <DHT.h>
+#include <ArduinoJson.h> 
+#include <map>
 
 // Configurações de rede Wi-Fi
 const char* ssid = "SSID";
-const char* password = "password";
+const char* password = "PASSWORD";
 
 // Configurações do HiveMQ Broker
-const char* mqtt_server = "Server";
+const char* mqtt_server = "BROKER";
 const char* mqtt_topic1 = "Umidade";
 const char* mqtt_topic2 = "Remedios";
-const char* mqtt_username = "username";
-const char* mqtt_password = "passsword";
+const char* mqtt_username = "USERBROKER";
+const char* mqtt_password = "PASSWORDBROKER";
 const int mqtt_port = 8883;
+
+String jsonCodigos = "";
+String bits = "";
 
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
@@ -27,7 +32,7 @@ PubSubClient client(espClient);
 #define led_remedio6 14
 #define led_remedio7 15
 #define led_remedio8 12
-#define led_remedio9 17
+#define led_remedio9 33
 #define led_remedio10 18
 #define buzzer 25
 #define trigPin 22        // Pino de Trigger do HC-SR04
@@ -36,36 +41,79 @@ PubSubClient client(espClient);
 
 DHT dht(dhtPin, DHT11);
 
+
+String decodeHuffman(String jsonCodigos, String bits) {
+  // 1. Parse do JSON
+  StaticJsonDocument<512> doc;
+  deserializeJson(doc, jsonCodigos);
+
+  // 2. Cria mapa inverso: código -> caractere
+  std::map<String, char> mapa;
+  for (JsonPair kv : doc.as<JsonObject>()) {
+    String caractere = kv.key().c_str();
+    String codigo = kv.value().as<String>();
+    mapa[codigo] = caractere[0]; // char único
+  }
+
+  // 3. Percorre os bits e decodifica
+  String resultado = "";
+  String buffer = "";
+  for (int i = 0; i < bits.length(); i++) {
+    buffer += bits[i];
+    if (mapa.count(buffer)) {
+      resultado += mapa[buffer];
+      buffer = "";
+    }
+  }
+
+  return resultado;
+}
+
 // Função de callback para receber mensagens MQTT
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Mensagem recebida: ");
-  String message;
-  for (int i = 0; i < length; i++) {
-    message += (char)payload[i];
+  Serial.print("Mensagem recebida: -");
+  String message = "";
+  String msg = "";
+  String descomprimida = "";
+  for (int i = 0; i < length; i++) msg += (char)payload[i];
+
+  int sepIndex = msg.indexOf("|||");
+  if (sepIndex != -1) {
+    String codigos = msg.substring(0, sepIndex);
+    String comprimida = msg.substring(sepIndex + 3);
+    descomprimida = decodeHuffman(codigos, comprimida);
+    
+    Serial.println(descomprimida);
+    // Agora você pode usar descomprimida: "3|14:30|Paracetamol"
+  } else {
+    Serial.println("Formato inválido.");
   }
-  Serial.println(message);
 
   // Aciona os LEDs e o buzzer com base no tópico recebido
-  if (message == "Remedio 1") {
+  if (descomprimida == "Remedio 1") {
     acionaLedEBuzzer(led_remedio1, "Remédio 1");
-  } else if (message == "Remedio 2") {
+  } else if (descomprimida == "Remedio 2") {
     acionaLedEBuzzer(led_remedio2, "Remédio 2");
-  } else if (message == "Remedio 3") {
+  } else if (descomprimida == "Remedio 3") {
     acionaLedEBuzzer(led_remedio3, "Remédio 3");
-  } else if (message == "Remedio 4") {
+  } else if (descomprimida == "Remedio 4") {
     acionaLedEBuzzer(led_remedio4, "Remédio 4");
-  } else if (message == "Remedio 5") {
+  } else if (descomprimida == "Remedio 5") {
     acionaLedEBuzzer(led_remedio5, "Remédio 5");
-  } else if (message == "Remedio 6") {
+  } else if (descomprimida == "Remedio 6") {
     acionaLedEBuzzer(led_remedio6, "Remédio 6");
-  } else if (message == "Remedio 7") {
+  } else if (descomprimida == "Remedio 7") {
     acionaLedEBuzzer(led_remedio7, "Remédio 7");
-  } else if (message == "Remedio 8") {
+  } else if (descomprimida == "Remedio 8") {
     acionaLedEBuzzer(led_remedio8, "Remédio 8");
-  } else if (message == "Remedio 9") {
+  } else if (descomprimida == "Remedio 9") {
     acionaLedEBuzzer(led_remedio9, "Remédio 9");
-  } else if (message == "Remedio 10") {
+  } else if (descomprimida == "Remedio 10") {
     acionaLedEBuzzer(led_remedio10, "Remédio 10");
+  }else{
+    tone(buzzer, 5000); 
+    delay(500);
+    noTone(buzzer);
   }
 
   
@@ -104,7 +152,7 @@ void reconnect() {
 void acionaLedEBuzzer(int ledPin, const char* nomeRemedio) {
   Serial.println("Entrou");
   digitalWrite(ledPin, HIGH);  // Liga o LED
-  // tone(buzzer, 5000);          // Aciona o buzzer (5000Hz)
+  tone(buzzer, 5000);          // Aciona o buzzer (5000Hz)
   Serial.println(nomeRemedio);
 
   // Aguarda a pessoa se aproximar (distância ≤ 5 cm) para desligar LED e buzzer
@@ -113,7 +161,7 @@ void acionaLedEBuzzer(int ledPin, const char* nomeRemedio) {
   }
 
   digitalWrite(ledPin, LOW);
-  // noTone(buzzer);
+  noTone(buzzer);
   Serial.println("Distância atingida, desligando LED e buzzer.");
 }
 
@@ -130,7 +178,6 @@ long medirDistancia() {
   return distancia;
 }
 
-// Função para ler dados do DHT11 e enviar alerta se necessário
 void lerTemperaturaEUmidade() {
   float temperatura = dht.readTemperature();
   float umidade = dht.readHumidity();
@@ -149,7 +196,6 @@ void lerTemperaturaEUmidade() {
       tone(buzzer, 1000);
       client.publish(mqtt_topic2, "Umidade acima de 80%");
 
-      // Aguarda a pessoa se aproximar (≤ 5 cm) para desligar o buzzer
       while (medirDistancia() > 5) {
         delay(100);
       }
