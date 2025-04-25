@@ -14,4 +14,4 @@ Projeto desenvolvido para o módulo Hands On Avançado do programa Maloca das iC
 
 [Progresso](https://docs.google.com/document/d/1JBzfeq8OowKTLfAnmz8IeUQeDAoNlAer/edit?usp=sharing&ouid=107033149333924170493&rtpof=true&sd=true)
 
-[Requisitos funcionais](https://github.com/Lucas-Ladislau/Hands-on-Advanced-MedBox/blob/main/documenta%C3%A7%C3%A3o/Hands%20on%20Intermediary%20Medbox%20-%20RF%20.pdf)
+[Requisitos funcionais](https://docs.google.com/document/d/16K2HUjZccPY4-9EPu_wtl0E8ZITCabvs/edit?usp=sharing&ouid=109419478006693650737&rtpof=true&sd=true)
