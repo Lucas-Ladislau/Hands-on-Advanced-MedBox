@@ -23,7 +23,7 @@ class _VitalsPageState extends State<VitalsPage> {
   }
 
   void configurarMQTT() async {
-    client = MqttServerClient('6b855318cbf249028a44d6a8610f73e9.s1.eu.hivemq.cloud', 'vitals_client');
+    client = MqttServerClient('HIVE_SERVER', 'vitals_client');
     client.port = 8883;
     client.secure = true;
     client.setProtocolV311();
@@ -31,14 +31,14 @@ class _VitalsPageState extends State<VitalsPage> {
 
     final connMessage = MqttConnectMessage()
         .withClientIdentifier('vitals_client')
-        .authenticateAs('hivemq.webclient.1744490960100', '2fk,1c30<%TPREj&AZdy')
+        .authenticateAs('HIVE_CLIENT', 'HIVE_PASSWORD')
         .startClean();
 
     client.connectionMessage = connMessage;
 
     try {
       await client.connect();
-      client.subscribe('smartwatch/vitals', MqttQos.atLeastOnce);
+      client.subscribe('Batimentos', MqttQos.atLeastOnce);
 
       client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? event) {
         final recMess = event![0].payload as MqttPublishMessage;

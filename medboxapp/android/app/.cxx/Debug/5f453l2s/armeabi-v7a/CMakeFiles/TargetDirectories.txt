@@ -1,0 +1,2 @@
+/home/lucas_anderson/Documentos/Curso-CC/maloca/Hands-on-Advanced-MedBox/medboxapp/android/app/.cxx/Debug/5f453l2s/armeabi-v7a/CMakeFiles/edit_cache.dir
+/home/lucas_anderson/Documentos/Curso-CC/maloca/Hands-on-Advanced-MedBox/medboxapp/android/app/.cxx/Debug/5f453l2s/armeabi-v7a/CMakeFiles/rebuild_cache.dir
