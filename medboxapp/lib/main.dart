@@ -15,10 +15,10 @@ import 'family_page.dart';
 
 import 'dart:async';
 
-const String mqttServer = "6b855318cbf249028a44d6a8610f73e9.s1.eu.hivemq.cloud";
+const String mqttServer = "HIVE_SERVER";
 const int mqttPort = 8883;
-const String mqttUser = "hivemq.webclient.1744490960100";
-const String mqttPassword = "2fk,1c30<%TPREj&AZdy";
+const String mqttUser = "HIVE_CLIENT";
+const String mqttPassword = "HIVE_PASSWORD";
 const String mqttTopicUmidade = "Umidade";
 const String mqttTopicRemedio = "Remedios";
 
@@ -252,28 +252,39 @@ class _RemedioScreenState extends State<RemedioScreen> {
 
     client.connectionMessage = connMessage;
 
+    client.onDisconnected = () {
+      print('MQTT DESCONECTADO. Tentando reconectar em 5 segundos...');
+      Future.delayed(Duration(seconds: 5), () {
+        conectarMQTT();
+      });
+    };
+
     try {
       await client.connect();
-      client.subscribe(mqttTopicUmidade, MqttQos.atLeastOnce);
-      client.subscribe(mqttTopicRemedio, MqttQos.atLeastOnce);
+      if (client.connectionStatus?.state == MqttConnectionState.connected) {
+        client.subscribe(mqttTopicUmidade, MqttQos.atLeastOnce);
+        client.subscribe(mqttTopicRemedio, MqttQos.atLeastOnce);
 
-      client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? event) {
-        if (event != null && event.isNotEmpty) {
-          final recMessage = event[0].payload as MqttPublishMessage;
-          final payload =
-              MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
-          setState(() {
-            mensagemRecebida = payload;
-          });
-          
-          if (event[0].topic == mqttTopicUmidade && payload.contains("alta")) {
-            exibirNotificacao("🚨 Alerta!", "Umidade elevada na caixa!");
+        client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? event) {
+          if (event != null && event.isNotEmpty) {
+            final recMessage = event[0].payload as MqttPublishMessage;
+            final payload =
+                MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
+            setState(() {
+              mensagemRecebida = payload;
+            });
+            
+            if (event[0].topic == mqttTopicUmidade && payload.contains("alta")) {
+              exibirNotificacao("🚨 Alerta!", "Umidade elevada na caixa!");
+            }
+            if (event[0].topic == mqttTopicRemedio && payload.contains("apagado")) {
+              exibirNotificacao("✅ Confirmação", "Remédio tomado!");
+            }
           }
-          if (event[0].topic == mqttTopicRemedio && payload.contains("apagado")) {
-            exibirNotificacao("✅ Confirmação", "Remédio tomado!");
-          }
-        }
-      });
+        });
+      }else{
+        print('Erro ao conectar MQTT: ${client.connectionStatus}');
+      }
     } catch (e) {
       client.disconnect();
     }
@@ -348,16 +359,19 @@ class _RemedioScreenState extends State<RemedioScreen> {
   }
 
   void _adicionarRemedio(BuildContext context) async {
-    TextEditingController nomeController = TextEditingController();
-    TextEditingController horarioController = TextEditingController();
-    TextEditingController compartimentoController = TextEditingController();
+  TextEditingController nomeController = TextEditingController();
+  TextEditingController horarioController = TextEditingController();
+  TextEditingController compartimentoController = TextEditingController();
+  TextEditingController frequenciaController = TextEditingController();
+  TextEditingController duracaoController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Adicionar Remédio"),
-          content: Column(
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Adicionar Remédio"),
+        content: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
@@ -373,43 +387,52 @@ class _RemedioScreenState extends State<RemedioScreen> {
                 decoration: InputDecoration(labelText: "Número do Compartimento"),
                 keyboardType: TextInputType.number,
               ),
+              TextField(
+                controller: frequenciaController,
+                decoration: InputDecoration(labelText: "Frequência(em horas)"),
+              ),
+              TextField(
+                controller: duracaoController,
+                decoration: InputDecoration(labelText: "Duração(em dias)"),
+              ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancelar"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (nomeController.text.isNotEmpty &&
-                    horarioController.text.isNotEmpty &&
-                    compartimentoController.text.isNotEmpty) {
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancelar"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nomeController.text.isNotEmpty &&
+                  horarioController.text.isNotEmpty &&
+                  compartimentoController.text.isNotEmpty) {
 
-                  int numeroCompartimento = int.tryParse(compartimentoController.text) ?? 1;
+                int numeroCompartimento = int.tryParse(compartimentoController.text) ?? 1;
 
-                  await _dbHelper.inserirRemedio(
-                    Remedio(
-                      nome: nomeController.text,
-                      horario: horarioController.text,
-                      numeroCompartimento: numeroCompartimento,
-                    ),
-                  );
+                await _dbHelper.inserirRemedio(
+                  Remedio(
+                    nome: nomeController.text,
+                    horario: horarioController.text,
+                    numeroCompartimento: numeroCompartimento,
+                  ),
+                );
 
-                  setState(() {
-                    _carregarRemedios();
-                  });
+                setState(() {
+                  _carregarRemedios();
+                });
 
-                  Navigator.pop(context);
-                }
-              },
-              child: Text("Salvar"),
-            ),
-          ],
-        );
-      },
-    );
-  }
+                Navigator.pop(context);
+              }
+            },
+            child: Text("Salvar"),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   void _deletarRemedio(int id) async {
     await _dbHelper.deletarRemedio(id);

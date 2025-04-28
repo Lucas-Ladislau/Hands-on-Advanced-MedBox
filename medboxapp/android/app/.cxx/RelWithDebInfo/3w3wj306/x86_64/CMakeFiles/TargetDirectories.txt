@@ -1,0 +1,2 @@
+/home/lucas_anderson/Documentos/Curso-CC/maloca/Hands-on-Advanced-MedBox/medboxapp/android/app/.cxx/RelWithDebInfo/3w3wj306/x86_64/CMakeFiles/edit_cache.dir
+/home/lucas_anderson/Documentos/Curso-CC/maloca/Hands-on-Advanced-MedBox/medboxapp/android/app/.cxx/RelWithDebInfo/3w3wj306/x86_64/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,1 @@
+/home/lucas_anderson/Documentos/Curso-CC/maloca/Hands-on-Advanced-MedBox/medboxapp/build/app/intermediates/cxx/RelWithDebInfo/3w3wj306/obj/x86
